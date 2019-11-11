@@ -26,6 +26,7 @@ public class RewardPointsDemo {
 		StringTokenizer st;
 		RewardCalculator rc = new RewardCalculator();
 		BufferedReader reader = null;
+		String customer=null;
 		String txDate=null;
 		String dollarSpent=null;
 		System.out.println("Transaction Records from transactions.txt:\n");
@@ -38,9 +39,10 @@ public class RewardPointsDemo {
 				System.out.println(line);
 
 				st=new StringTokenizer(line);
+				customer=st.hasMoreTokens()?st.nextToken():null;
 				txDate=st.hasMoreTokens()?st.nextToken():null;
 				dollarSpent=st.hasMoreTokens()?st.nextToken():null;
-				rc.collectRewards(dollarSpent, txDate);
+				rc.collectRewards(customer, dollarSpent, txDate);
 				txDate=null;
 				dollarSpent=null;
 			}

@@ -9,18 +9,21 @@ import java.util.Map.Entry;
 import java.util.Optional;
 
 public class RewardCalculator {
-	HashMap<String, Integer> monthlyRewardPoints;
+	HashMap<String, HashMap<String, Integer>> monthlyRewardPoints;
 
 
 	public RewardCalculator() {
 		super();
-		this.monthlyRewardPoints = new HashMap<String, Integer>();
+		this.monthlyRewardPoints = new HashMap<String, HashMap<String, Integer>>();
 	}
 
-	public void collectRewards(String dollarSpentInString, String transactionDate) {
-		if(dollarSpentInString==null ||  transactionDate==null) {
+	public void collectRewards(String customer, String dollarSpentInString, String transactionDate) {
+		if(customer==null || dollarSpentInString==null ||  transactionDate==null) {
 			return;
 		}
+
+		HashMap<String, Integer> monthlyRewardPointsForMember = 
+				Optional.ofNullable(monthlyRewardPoints.get(customer)).orElse(new HashMap<String, Integer>());
 		
 		int monthOfYear=0;
 		int year=0;
@@ -35,10 +38,10 @@ public class RewardCalculator {
 		}
 		monthYear= String.format("%s %d", getCalendarMonth(monthOfYear), year);
 		
-		Integer rewardPointsForMonth = getRewardsForMonthYear(monthYear);
+		Integer rewardPointsForMonth = getRewardsForMonthYear(monthYear, monthlyRewardPointsForMember);
 		rewardPointsForMonth = Optional.ofNullable(rewardPointsForMonth).orElse(0);
-		monthlyRewardPoints.put(monthYear, rewardPointsForMonth+calculateRewards(dollarSpent));
-		
+		monthlyRewardPointsForMember.put(monthYear, rewardPointsForMonth+calculateRewards(dollarSpent));
+		monthlyRewardPoints.put(customer, monthlyRewardPointsForMember);
 	}
 	
 	private Integer calculateRewards(Integer dollarSpent) {
@@ -68,14 +71,26 @@ public class RewardCalculator {
     
     public String getRewardsSummary() {
     	StringBuffer summary = new StringBuffer();
-    	summary.append("\nMonthly Rewards Summary:\n\n");
-    	for ( Entry<String, Integer> monthlyPoints:monthlyRewardPoints.entrySet()) {
-        	summary.append(String.format("%s has %d reward points\n",  monthlyPoints.getKey(), monthlyPoints.getValue()));
+    	HashMap<String, Integer> monthlyRewardPointsForMember;
+    	Integer memberTotal=0;
+    	for ( Entry<String, HashMap<String, Integer>> monthlyPoints:monthlyRewardPoints.entrySet()) {
+	    	summary.append(String.format("\nMonthly Rewards Summary on %s:\n\n",monthlyPoints.getKey()));
+	    	monthlyRewardPointsForMember = monthlyPoints.getValue();
+			for ( Entry<String, Integer> monthlyPointsForMember:monthlyRewardPointsForMember .entrySet()) {
+	        	summary.append(String.format("\t%s has %d reward points\n",  
+	        			monthlyPointsForMember.getKey(), monthlyPointsForMember.getValue()));
+	        	memberTotal+=monthlyPointsForMember.getValue();
+	    	}
+	    	summary.append(String.format("\n\tRewards Total on %s is %d:\n\n",monthlyPoints.getKey(),memberTotal));
+	    	memberTotal=0;
     	}
     	return summary.toString();
     }
-    
-    public Integer getRewardsForMonthYear(String monthYear) {
-    	return Optional.ofNullable(monthlyRewardPoints.get(monthYear)).orElse(0);
+    public Integer getRewardsForMonthYearForMember(String monthYear, String customer) {
+    	return getRewardsForMonthYear(monthYear, monthlyRewardPoints.get(customer));
+    }
+    public Integer getRewardsForMonthYear(String monthYear, HashMap<String, Integer> monthlyRewardPointsForMember) {
+    	if(monthlyRewardPointsForMember==null) return 0;
+    	return Optional.ofNullable(monthlyRewardPointsForMember.get(monthYear)).orElse(0);
     }
 }
